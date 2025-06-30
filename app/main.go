@@ -25,11 +25,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
+		go handleConnections(conn)
 	}
+}
+
+func handleConnections(conn net.Conn) {
+
 	defer conn.Close()
 
 	// buf := make([]byte, 1024)
@@ -43,7 +50,7 @@ func main() {
 	tcpAccept, _ := reader.ReadString('\n')
 	tcpUserAgent, _ := reader.ReadString('\n')
 	tcpData := fmt.Sprintf("%s\r%s\r%s\r%s\r\n", tcpPayload, tcpHost, tcpAccept, tcpUserAgent)
-	fmt.Println("TCP DATA:\n", tcpData)
+	fmt.Println("TCP Request:\n", tcpData)
 
 	// methods := []string{"GET","POST","PUT","DELETE"}
 
@@ -88,12 +95,7 @@ func main() {
 					httpPayload = fmt.Sprintf("%s\r\n\r\n", httpStatus)
 				}
 				conn.Write([]byte(httpPayload))
-				if err != nil {
-					fmt.Println("Error accepting connection: ", err)
-					os.Exit(1)
-				}
 			}
 		}
 	}
-
 }
