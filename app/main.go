@@ -39,7 +39,11 @@ func main() {
 
 	reader := bufio.NewReader(conn)
 	tcpPayload, _ := reader.ReadString('\n')
-	fmt.Println("Data: ", tcpPayload)
+	tcpHost, _ := reader.ReadString('\n')
+	tcpAccept, _ := reader.ReadString('\n')
+	tcpUserAgent, _ := reader.ReadString('\n')
+	tcpData := fmt.Sprintf("%s\r%s\r%s\r%s\r\n", tcpPayload, tcpHost, tcpAccept, tcpUserAgent)
+	fmt.Println("TCP DATA:\n", tcpData)
 
 	// methods := []string{"GET","POST","PUT","DELETE"}
 
@@ -56,7 +60,8 @@ func main() {
 					contentLength = ""
 					response      = ""
 				)
-				if request[1] == "echo" {
+				switch request[1] {
+				case "echo":
 					contentLength = strconv.Itoa(len(request[2]))
 					response = request[2]
 					httpPayload = fmt.Sprintf(
@@ -69,9 +74,18 @@ func main() {
 					// else if path[:5] == "/echo" {
 					// dynamic_path := strings.Split(path, "/")[len(strings.Split(path, "/"))-1]
 					// res = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(dynamic_path), dynamic_path)
-				} else {
+				case "user-agent":
+					response = strings.TrimSpace(strings.TrimPrefix(tcpUserAgent, "User-Agent: "))
+					contentLength = strconv.Itoa(len(response))
+					httpPayload = fmt.Sprintf(
+						"%s\r\nContent-Type: %s\r\nContent-Length: %s\r\n\r\n%s",
+						httpStatus,
+						contentType,
+						contentLength,
+						response,
+					)
+				default:
 					httpPayload = fmt.Sprintf("%s\r\n\r\n", httpStatus)
-					// conn.Write([]byte(httpStatus + "\r\n\r\n"))
 				}
 				conn.Write([]byte(httpPayload))
 				if err != nil {
